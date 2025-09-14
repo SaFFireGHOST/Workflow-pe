@@ -1,112 +1,63 @@
+// src/models/WorkflowNode.ts
+
 export type NodeType = 'start' | 'end' | 'llm' | 'tool' | 'interrupt';
 
-export interface NodeData extends Record<string, unknown> {
+// Base interface for data attached to a node
+export interface NodeData {
   label: string;
-  description?: string;
-  config?: Record<string, any>;
+  description: string;
+  config?: NodeConfig;
+  inputs?: Record<string, any>;
+  outputs?: Record<string, any>;
 }
 
-// Base class for all specialized node configurations
+// --- CONFIGURATION CLASSES ---
+
 export abstract class BaseNodeConfig {
   abstract getConfigType(): string;
-  abstract validate(): boolean;
 }
 
-// LLM Node Configuration
 export class LLMNodeConfig extends BaseNodeConfig {
-  apiKey: string = '';
-  model: string = 'gpt-3.5-turbo';
+  model: string = 'gpt-4';
   temperature: number = 0.7;
-  maxTokens: number = 2048;
-  systemPrompt: string = '';
+  maxTokens: number = 1024;
 
   constructor(config?: Partial<LLMNodeConfig>) {
     super();
-    if (config) {
-      Object.assign(this, config);
-    }
+    if (config) Object.assign(this, config);
   }
 
-  getConfigType(): string {
-    return 'llm';
-  }
-
-  validate(): boolean {
-    return this.apiKey.length > 0 && this.maxTokens > 0 && this.temperature >= 0 && this.temperature <= 2;
-  }
+  getConfigType(): string { return 'llm'; }
 }
 
-// Tool Node Configuration
 export class ToolNodeConfig extends BaseNodeConfig {
-  toolName: 'api_call' | 'database_query' | 'custom_code' | 'file_operation' | 'email_send' = 'api_call';
-  apiEndpoint: string = '';
-  httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET';
-  databaseConnection: string = '';
-  customCode: string = '';
-  description: string = '';
+  toolName: string = '';
   parameters: Record<string, any> = {};
 
   constructor(config?: Partial<ToolNodeConfig>) {
     super();
-    if (config) {
-      Object.assign(this, config);
-    }
+    if (config) Object.assign(this, config);
   }
 
-  getConfigType(): string {
-    return 'tool';
-  }
-
-  validate(): boolean {
-    switch (this.toolName) {
-      case 'api_call':
-        return this.apiEndpoint.length > 0;
-      case 'database_query':
-        return this.databaseConnection.length > 0;
-      case 'custom_code':
-        return this.customCode.length > 0;
-      default:
-        return true;
-    }
-  }
+  getConfigType(): string { return 'tool'; }
 }
 
-// Interrupt Node Configuration
 export class InterruptNodeConfig extends BaseNodeConfig {
-  message: string = 'Please provide input';
-  timeout: number = 300;
-  allowedResponses: string[] = ['yes', 'no'];
-  requiresApproval: boolean = false;
-  priorityLevel: 'low' | 'normal' | 'high' | 'urgent' = 'normal';
+  prompt: string = 'User input required';
+  timeout: number = 60; // in seconds
 
   constructor(config?: Partial<InterruptNodeConfig>) {
     super();
-    if (config) {
-      Object.assign(this, config);
-    }
+    if (config) Object.assign(this, config);
   }
 
-  getConfigType(): string {
-    return 'interrupt';
-  }
-
-  validate(): boolean {
-    return this.message.length > 0 && this.timeout > 0 && this.allowedResponses.length > 0;
-  }
+  getConfigType(): string { return 'interrupt'; }
 }
 
-// Specialized node data interfaces
-export interface LLMNodeData extends NodeData {
-  config?: LLMNodeConfig;
-}
+export type NodeConfig = LLMNodeConfig | ToolNodeConfig | InterruptNodeConfig;
 
-export interface ToolNodeData extends NodeData {
-  config?: ToolNodeConfig;
-}
 
-export interface InterruptNodeData extends NodeData {
-  config?: InterruptNodeConfig;
-}
+// --- MAIN WORKFLOW NODE CLASS ---
 
 export class WorkflowNode {
   id: string;
@@ -123,46 +74,69 @@ export class WorkflowNode {
     this.id = id;
     this.type = type;
     this.position = position;
-    this.data = data;
+    this.data = this.initializeNodeData(type, data);
   }
 
-  // Method to update node data
-  updateData(newData: Partial<NodeData>): WorkflowNode {
-    return new WorkflowNode(
-      this.id,
-      this.type,
-      this.position,
-      { ...this.data, ...newData }
-    );
+  private initializeNodeData(type: NodeType, data: NodeData): NodeData {
+    const inputs: Record<string, any> = {};
+    const outputs: Record<string, any> = {};
+
+    switch (type) {
+      case 'start':
+        outputs['value'] = 'string';
+        break;
+      case 'llm':
+        inputs['context'] = '';
+        outputs['summary'] = 'string';
+        break;
+      case 'tool':
+        outputs['result'] = 'string';
+        break;
+      case 'interrupt':
+        inputs['string'] = '$interrupt.string';
+        outputs['value'] = 'string';
+        break;
+    }
+
+    return { ...data, inputs: data.inputs || inputs, outputs: data.outputs || outputs };
   }
 
-  // Method to update node position
-  updatePosition(newPosition: { x: number; y: number }): WorkflowNode {
-    return new WorkflowNode(
-      this.id,
-      this.type,
-      newPosition,
-      this.data
-    );
-  }
+  isStartNode(): boolean { return this.type === 'start'; }
+  isEndNode(): boolean { return this.type === 'end'; }
 
-  // Method to check if node is a start node
-  isStartNode(): boolean {
-    return this.type === 'start';
+  getConfig<T extends BaseNodeConfig>(): T | undefined {
+    return this.data.config as T | undefined;
   }
-
-  // Method to check if node is an end node
-  isEndNode(): boolean {
-    return this.type === 'end';
-  }
-
-  // Method to create a copy of the node
+  
   clone(): WorkflowNode {
-    return new WorkflowNode(
-      this.id,
-      this.type,
-      { ...this.position },
-      { ...this.data }
-    );
+    let clonedConfig: NodeConfig | undefined;
+
+    // Correctly re-instantiate the config class
+    if (this.data.config) {
+      const configData = { ...this.data.config };
+      switch (this.type) {
+        case 'llm':
+          clonedConfig = new LLMNodeConfig(configData as LLMNodeConfig);
+          break;
+        case 'tool':
+          clonedConfig = new ToolNodeConfig(configData as ToolNodeConfig);
+          break;
+        case 'interrupt':
+          clonedConfig = new InterruptNodeConfig(configData as InterruptNodeConfig);
+          break;
+      }
+    }
+    
+    const clonedData = { ...this.data, config: clonedConfig };
+    
+    return new WorkflowNode(this.id, this.type, { ...this.position }, clonedData);
+  }
+
+  updateData(newData: Partial<NodeData>): WorkflowNode {
+    return new WorkflowNode(this.id, this.type, this.position, { ...this.data, ...newData });
+  }
+
+  updatePosition(newPosition: { x: number; y: number }): WorkflowNode {
+    return new WorkflowNode(this.id, this.type, newPosition, this.data);
   }
 }

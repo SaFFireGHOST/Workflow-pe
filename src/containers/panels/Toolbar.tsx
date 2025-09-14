@@ -41,6 +41,20 @@ export const Toolbar: React.FC = () => {
     }
   };
 
+  const handleExportToBackend = () => {
+    if (currentWorkflow) {
+      const exportData = currentWorkflow.toBackendExportObject();
+      console.log('Exporting workflow to backend format:', exportData);
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+      const exportFileDefaultName = `${currentWorkflow.name.replace(/\s+/g, '_')}_backend.json`;
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    }
+  };
+
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -106,6 +120,15 @@ export const Toolbar: React.FC = () => {
                   <Download size={16} />
                   <span>Export</span>
                 </button>
+
+                <button
+                  onClick={handleExportToBackend}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                >
+                  <Upload size={16} />
+                  <span>Export to Backend</span>
+                </button>
+
               </>
             )}
 
