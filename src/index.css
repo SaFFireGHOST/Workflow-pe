@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: #64748b;
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Smooth scrolling */
+.custom-scrollbar {
+  scroll-behavior: smooth;
+}
+
+/* ReactFlow specific styles */
+.react-flow {
+  background-color: #f9fafb;
+}
+
+.react-flow__background {
+  background-color: #f9fafb;
+}
+
+.react-flow__controls {
+  position: absolute !important;
+  top: 10px !important;
+  left: 10px !important;
+  z-index: 1000 !important;
+}
+
+.react-flow__minimap {
+  position: absolute !important;
+  bottom: 10px !important;
+  right: 10px !important;
+  z-index: 1000 !important;
+  width: 200px !important;
+  height: 150px !important;
+}
+
+/* Ensure ReactFlow container takes full space */
+.react-flow__wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Fix potential z-index issues */
+.react-flow__pane {
+  z-index: 1 !important;
+}
