@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { WorkflowNode, WorkflowEdge, Workflow, NodeType, EdgeType, NodeData } from '../models';
+import { WorkflowNode, WorkflowEdge, Workflow, NodeType, EdgeType, NodeData,LLMNodeConfig, ToolNodeConfig, InterruptNodeConfig, NodeConfig } from '../models';
 
 interface WorkflowContext {
   workflows: Workflow[];
@@ -91,7 +91,25 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
     if (!canAddNode(type) || !currentWorkflow) {
       return;
     }
-    
+
+    // --- Start of Fix ---
+    let config: NodeConfig | undefined;
+
+    // Create the specific config object based on the node type
+    switch (type) {
+      case 'llm':
+        config = new LLMNodeConfig();
+        break;
+      case 'tool':
+        config = new ToolNodeConfig();
+        break;
+      case 'interrupt':
+        config = new InterruptNodeConfig();
+        break;
+      // 'start' and 'end' nodes don't have configs, so they are left undefined
+    }
+    // --- End of Fix ---
+
     const node = new WorkflowNode(
       generateId(),
       type,
@@ -99,11 +117,12 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
       {
         label: `${type.charAt(0).toUpperCase() + type.slice(1)} Node`,
         description: '',
+        config, // <-- Assign the newly created config object here
       }
     );
-    
+
     const updatedWorkflow = currentWorkflow.addNode(node);
-    
+
     set((state) => ({
       currentWorkflow: updatedWorkflow,
       workflows: state.workflows.map(w => w.id === updatedWorkflow.id ? updatedWorkflow : w),
@@ -157,6 +176,7 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
   },
 
   setSelectedNode: (node: WorkflowNode | null) => {
+    console.log('Selected Node:', node); // <--- Add this line
     set({ selectedNode: node, selectedEdge: null });
   },
 
@@ -170,7 +190,7 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
       target,
       type,
       {
-        label: type === 'conditional' ? 'If true' : type === 'error' ? 'On error' : '',
+        label: type === 'conditional' ? 'If true' : '',
       }
     );
 
@@ -182,14 +202,24 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
     }));
   },
 
-  updateEdge: (id: string, data: Partial<WorkflowEdge['data']>) => {
+  updateEdge: (id: string, newData: Partial<WorkflowEdge>) => {
     const { currentWorkflow } = get();
     if (!currentWorkflow) return;
 
     const existingEdge = currentWorkflow.findEdge(id);
     if (!existingEdge) return;
 
-    const updatedEdge = existingEdge.updateData(data);
+    // Instead of just updating data, we create a new edge instance
+    // by merging the old edge's properties with the new data.
+    const updatedEdge = new WorkflowEdge(
+      existingEdge.id,
+      existingEdge.source,
+      existingEdge.target,
+      newData.type || existingEdge.type, // Use the new type if provided
+      { ...existingEdge.data, ...newData.data }, // Merge the data objects
+      newData.animated !== undefined ? newData.animated : existingEdge.animated,
+      { ...existingEdge.style, ...newData.style }
+    );
     const updatedWorkflow = currentWorkflow.updateEdge(id, updatedEdge);
 
     set((state) => ({

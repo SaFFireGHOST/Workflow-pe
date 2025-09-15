@@ -10,7 +10,7 @@ import {
   ToolNodeConfig,
   InterruptNodeConfig,
   NodeConfig,
-  EdgeConfig
+  BaseEdgeConfig
 } from './';
 
 export class Workflow {
@@ -60,7 +60,7 @@ export class Workflow {
 
     // Re-hydrate edges with proper config class instances
     const reconstructedEdges = importedData.edges.map((edgeData: any) => {
-      let configInstance: EdgeConfig | undefined;
+      let configInstance: BaseEdgeConfig | undefined;
       if (edgeData.data.config) {
         switch (edgeData.type) {
           case 'conditional':
@@ -91,8 +91,7 @@ export class Workflow {
     );
   }
 
-  // (The rest of the Workflow.ts file remains the same)
-  // ... addNode, removeNode, toExportObject, toBackendExportObject etc.
+  
   addNode(node: WorkflowNode): Workflow {
     return new Workflow(
       this.id, this.name, [...this.nodes, node], this.edges,
@@ -131,6 +130,23 @@ export class Workflow {
       this.createdAt, new Date(), this.description
     );
   }
+
+  // Method to find an edge by id
+  findEdge(edgeId: string): WorkflowEdge | undefined {
+    return this.edges.find(edge => edge.id === edgeId);
+  }
+
+  // Method to update an edge
+  updateEdge(edgeId: string, updatedEdge: WorkflowEdge): Workflow {
+    const updatedEdges = this.edges.map(edge =>
+      edge.id === edgeId ? updatedEdge : edge
+    );
+    return new Workflow(
+      this.id, this.name, this.nodes, updatedEdges,
+      this.createdAt, new Date(), this.description
+    );
+  }
+
   findNode(nodeId: string): WorkflowNode | undefined {
     return this.nodes.find(node => node.id === nodeId);
   }
