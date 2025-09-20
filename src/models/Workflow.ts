@@ -8,6 +8,7 @@ import {
   LoopingEdgeConfig,
   LLMNodeConfig,
   ToolNodeConfig,
+  InputNodeConfig,
   InterruptNodeConfig,
   NodeConfig,
   BaseEdgeConfig
@@ -50,6 +51,9 @@ export class Workflow {
           case 'interrupt':
             configInstance = new InterruptNodeConfig(nodeData.data.config);
             break;
+          case 'userInput':
+            configInstance = new InputNodeConfig(nodeData.data.config);
+            break;  
         }
       }
       return new WorkflowNode(

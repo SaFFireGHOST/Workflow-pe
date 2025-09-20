@@ -8,7 +8,7 @@ export const ToolNode: React.FC<NodeProps> = (props) => {
     <BaseNode
       {...props}
       icon={<Wrench size={16} />}
-      bgColor="bg-gradient-to-br from-green-500 to-green-600"
+      bgColor="bg-gradient-to-br from-emerald-500 to-emerald-600"
       borderColor="border-green-400"
       textColor="text-white"
       nodeType="tool"

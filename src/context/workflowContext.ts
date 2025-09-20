@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { WorkflowNode, WorkflowEdge, Workflow, NodeType, EdgeType, NodeData,LLMNodeConfig, ToolNodeConfig, InterruptNodeConfig, NodeConfig } from '../models';
+import { WorkflowNode, WorkflowEdge, Workflow, NodeType, EdgeType, NodeData,LLMNodeConfig, ToolNodeConfig, InterruptNodeConfig,InputNodeConfig, NodeConfig } from '../models';
 
 interface WorkflowContext {
   workflows: Workflow[];
@@ -106,9 +106,12 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
       case 'interrupt':
         config = new InterruptNodeConfig();
         break;
+      case 'userInput':
+        config = new InputNodeConfig();
+        break;  
       // 'start' and 'end' nodes don't have configs, so they are left undefined
     }
-    // --- End of Fix ---
+ 
 
     const node = new WorkflowNode(
       generateId(),

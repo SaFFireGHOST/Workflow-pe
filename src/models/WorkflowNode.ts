@@ -1,6 +1,6 @@
 // src/models/WorkflowNode.ts
 
-export type NodeType = 'start' | 'end' | 'llm' | 'tool' | 'interrupt';
+export type NodeType = 'start' | 'end' | 'llm' | 'tool' | 'interrupt' | 'userInput';
 
 // Base interface for data attached to a node.
 export interface NodeData {
@@ -50,7 +50,16 @@ export class InterruptNodeConfig extends BaseNodeConfig {
   getConfigType(): string { return 'interrupt'; }
 }
 
-export type NodeConfig = LLMNodeConfig | ToolNodeConfig | InterruptNodeConfig;
+export class InputNodeConfig extends BaseNodeConfig {
+  constructor(config?: Partial<InputNodeConfig>) {
+    super();
+    if (config) Object.assign(this, config);
+  }
+
+  getConfigType(): string { return 'userInput'; }
+}
+
+export type NodeConfig = LLMNodeConfig | ToolNodeConfig | InterruptNodeConfig | InputNodeConfig; 
 
 
 // --- MAIN WORKFLOW NODE CLASS ---
@@ -146,6 +155,9 @@ export class WorkflowNode {
         case 'interrupt':
           clonedConfig = new InterruptNodeConfig(configData as InterruptNodeConfig);
           break;
+        case 'userInput':
+          clonedConfig = new InputNodeConfig(configData as InputNodeConfig);
+          break;  
       }
     }
     

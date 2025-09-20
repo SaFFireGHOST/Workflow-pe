@@ -6,6 +6,7 @@ import { useWorkflowContext } from '../../context/workflowContext';
 import { LLMNodeProperties } from '../properties/LLMNodeProperties';
 import { ToolNodeProperties } from '../properties/ToolNodeProperties';
 import { InterruptNodeProperties } from '../properties/InterupptNodeProperties';
+import { InputNodeProperties } from '../properties/InputNodeProperties';
 import { EdgeProperties } from '../properties/EdgeProperties';
 
 export const PropertiesPanel: React.FC = () => {
@@ -36,6 +37,8 @@ export const PropertiesPanel: React.FC = () => {
         return <ToolNodeProperties node={selectedNode} />;
       case 'interrupt':
         return <InterruptNodeProperties node={selectedNode} />;
+      case 'userInput':
+        return <InputNodeProperties node={selectedNode} />; 
       default:
         return <p className="text-sm text-gray-500">This node has no specific properties to configure.</p>;
     }

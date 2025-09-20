@@ -1,13 +1,14 @@
 import React from 'react';
-import { Play, Square, Brain, Wrench, Pause } from 'lucide-react';
+import { Play, Square, Brain, Wrench, Pause, LogIn } from 'lucide-react';
 import { useWorkflowContext } from '../../context/workflowContext';
 
 const nodeTypes = [
   { type: 'start' as const, label: 'Start', icon: Play, color: 'bg-green-500 hover:bg-green-600' },
   { type: 'end' as const, label: 'End', icon: Square, color: 'bg-red-500 hover:bg-red-600' },
   { type: 'llm' as const, label: 'LLM', icon: Brain, color: 'bg-blue-500 hover:bg-blue-600' },
-  { type: 'tool' as const, label: 'Tool', icon: Wrench, color: 'bg-green-600 hover:bg-green-700' },
+  { type: 'tool' as const, label: 'Tool', icon: Wrench, color: 'bg-emerald-600 hover:bg-emerald-700' },
   { type: 'interrupt' as const, label: 'Interrupt', icon: Pause, color: 'bg-yellow-500 hover:bg-yellow-600' },
+  { type: 'userInput' as const, label: 'Input', icon: LogIn, color: 'bg-purple-500 hover:bg-purple-600' },
 ];
 
 export const NodePanel: React.FC = () => {

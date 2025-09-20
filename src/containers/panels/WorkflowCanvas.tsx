@@ -20,6 +20,7 @@ import { EndNode } from '../nodes/EndNode';
 import { LLMNode } from '../nodes/LLMNode';
 import { ToolNode } from '../nodes/ToolNode';
 import { InterruptNode } from '../nodes/InterruptNode';
+import { InputNode } from '../nodes/InputNode';
 import { useWorkflowContext } from '../../context/workflowContext';
 
 const nodeTypes = {
@@ -28,6 +29,7 @@ const nodeTypes = {
   llm: LLMNode,
   tool: ToolNode,
   interrupt: InterruptNode,
+  userInput:InputNode,
 };
 
 export const WorkflowCanvas: React.FC = () => {
@@ -241,11 +243,13 @@ export const WorkflowCanvas: React.FC = () => {
           position="bottom-right"
           nodeColor={(node) => {
             switch (node.type) {
-              case 'start': return '#10b981';
+              case 'start': return '#22C55E';
               case 'end': return '#ef4444';
               case 'llm': return '#3b82f6';
-              case 'tool': return '#f59e0b';
-              case 'interrupt': return '#8b5cf6';
+              case 'tool': return '#0EB27C';
+              
+              case 'interrupt': return '#E1A807';
+              case 'userInput': return '#A44FF4'
               default: return '#6b7280';
             }
           }}
