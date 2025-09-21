@@ -1,158 +1,208 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
+// src/containers/properties/InputNodeProperties.tsx
+
+import React, { useState, useEffect } from 'react';
 import { useWorkflowContext } from '../../context/workflowContext';
 import { WorkflowNode } from '../../models';
-import { Save, AlertCircle, PlusCircle, XCircle } from 'lucide-react';
+import { Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 
 interface InputNodePropertiesProps {
   node: WorkflowNode;
 }
 
-// Interface to manage the state of each input field in the UI
 interface InputField {
-  id: string; // For React key prop
-  name: string; // Corresponds to the key in the 'outputs' object (e.g., "video_url")
-  type: 'string' | 'number' | 'boolean'; // Corresponds to the value (e.g., "string")
-  label: string; // User-friendly label for the form
+  key: string;
+  value: string;
+  type: 'string' | 'number' | 'boolean' ;
+  required: boolean;
+  validation?: string; // Regex pattern for validation
 }
-
-// Helper to transform the node's `outputs` object into the UI state array
-const transformOutputsToState = (outputs: { [key: string]: string } | undefined): InputField[] => {
-  if (!outputs) return [];
-  return Object.entries(outputs).map(([name, type]) => ({
-    id: crypto.randomUUID(),
-    name,
-    type: type as 'string' | 'number' | 'boolean',
-    label: name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // A default label
-  }));
-};
-
 
 export const InputNodeProperties: React.FC<InputNodePropertiesProps> = ({ node }) => {
   const { updateNode } = useWorkflowContext();
 
-  // The main state is an array of objects, representing each input field to be configured.
-  const [inputFields, setInputFields] = useState<InputField[]>(transformOutputsToState(node.data.outputs));
+  // Initialize state from the node's inputs, providing defaults
+  const [inputFields, setInputFields] = useState<InputField[]>(
+    node.data.inputs?.input_fields || [
+      {
+        key: '',
+        value: '',
+        type: 'string',
+        required: true,
+      }
+    ]
+  );
   const [error, setError] = useState('');
 
-  // Effect to update the form if a different node is selected
+  // Effect to reset the form if a different node is selected
   useEffect(() => {
-    setInputFields(transformOutputsToState(node.data.outputs));
+    setInputFields(node.data.inputs?.input_fields || [
+      {
+        key: '',
+        value: '',
+        type: 'string',
+        required: true,
+      }
+    ]);
     setError('');
   }, [node]);
 
-  const handleFieldChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const updatedFields = [...inputFields];
-    updatedFields[index] = { ...updatedFields[index], [event.target.name]: event.target.value };
-    setInputFields(updatedFields);
-  };
-
-  const addField = () => {
-    setInputFields([...inputFields, { id: crypto.randomUUID(), name: '', type: 'string', label: '' }]);
-  };
-
-  const removeField = (index: number) => {
-    setInputFields(inputFields.filter((_, i) => i !== index));
-  };
-
   const handleSave = () => {
-    setError('');
-    const names = new Set<string>();
-
     // Validation
-    for (const field of inputFields) {
-      if (!field.name.trim() || !field.label.trim()) {
-        setError('Field Name and Label cannot be empty.');
-        return;
-      }
-      if (!/^[a-zA-Z0-9_]+$/.test(field.name)) {
-        setError(`Field Name "${field.name}" is invalid. Use only letters, numbers, and underscores.`);
-        return;
-      }
-      if (names.has(field.name)) {
-        setError(`Duplicate Field Name "${field.name}" found. Names must be unique.`);
-        return;
-      }
-      names.add(field.name);
+
+    if (inputFields.length === 0) {
+      setError('At least one input field is required.');
+      return;
     }
 
-    // Transform the UI state array back into the required `outputs` object format
-    const updatedOutputs = inputFields.reduce((acc, field) => {
-      acc[field.name] = field.type;
-      return acc;
-    }, {} as { [key: string]: string });
+    // Check for duplicate field keys
+    const fieldKeys = inputFields.map(field => field.key);
+    const uniqueKeys = new Set(fieldKeys);
+    if (fieldKeys.length !== uniqueKeys.size) {
+      setError('Input field keys must be unique.');
+      return;
+    }
 
-    // Save the updated `outputs` object to the node's data
-    updateNode(node.id, { outputs: updatedOutputs });
+    // Check for empty field keys or labels
+    const hasEmptyKeys = inputFields.some(field => !field.key.trim() || !field.value.trim());
+    if (hasEmptyKeys) {
+      setError('All input fields must have both key and label.');
+      return;
+    }
+
+    setError('');
+
+    const updatedInputs = {
+      ...node.data.inputs,
+      input_fields: inputFields,
+    };
+
+    updateNode(node.id, { inputs: updatedInputs });
+  };
+
+  const addInputField = () => {
+    const newField: InputField = {
+      key: ``,
+      value: '',
+      type: 'string',
+      required: false,
+    };
+    setInputFields([...inputFields, newField]);
+  };
+
+  const updateInputField = (index: number, updatedField: Partial<InputField>) => {
+    const updated = inputFields.map((field, i) => 
+      i === index ? { ...field, ...updatedField } : field
+    );
+    setInputFields(updated);
+  };
+
+  const removeInputField = (index: number) => {
+    if (inputFields.length > 1) {
+      setInputFields(inputFields.filter((_, i) => i !== index));
+    }
   };
 
   return (
     <div className="space-y-4">
-      <h4 className="text-md font-semibold text-gray-800">Input Fields Configuration</h4>
-      <p className="text-xs text-gray-500 -mt-3">Define the data this node will provide to the workflow.</p>
+      <h4 className="text-md font-semibold text-gray-800">Input Node Configuration</h4>
 
+
+      {/* Input Fields Configuration */}
       <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h5 className="text-sm font-semibold text-gray-800">Input Fields</h5>
+          <button
+            onClick={addInputField}
+            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center text-sm"
+          >
+            <Plus size={14} className="mr-1" />
+            Add Field
+          </button>
+        </div>
+
         {inputFields.map((field, index) => (
-          <div key={field.id} className="p-3 border border-gray-200 rounded-md space-y-2 relative">
-            <button 
-              onClick={() => removeField(index)} 
-              className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
-            >
-              <XCircle size={16} />
-            </button>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Field Label</label>
-              <input
-                type="text"
-                name="label"
-                value={field.label}
-                onChange={(e) => handleFieldChange(index, e)}
-                placeholder="e.g., YouTube Video URL"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
+          <div key={index} className="border border-gray-200 rounded-md p-3 space-y-2">
+            <div className="flex justify-between items-start">
+              <span className="text-sm font-medium text-gray-700">Field {index + 1}</span>
+              {inputFields.length > 1 && (
+                <button
+                  onClick={() => removeInputField(index)}
+                  className="text-red-600 hover:text-red-800"
+                  title="Remove field"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Key</label>
                 <input
                   type="text"
-                  name="name"
-                  value={field.name}
-                  onChange={(e) => handleFieldChange(index, e)}
-                  placeholder="e.g., video_url"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs"
+                  value={field.key}
+                  onChange={(e) => updateInputField(index, { key: e.target.value })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                  placeholder="field_key"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
                 <select
-                  name="type"
                   value={field.type}
-                  onChange={(e) => handleFieldChange(index, e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  onChange={(e) => updateInputField(index, { type: e.target.value as InputField['type'] })}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                 >
-                  <option value="string">String</option>
+                  <option value="text">String</option>
                   <option value="number">Number</option>
                   <option value="boolean">Boolean</option>
+                  
+                 
                 </select>
               </div>
             </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Input Value</label>
+              <input
+                type="text"
+                value={field.value}
+                onChange={(e) => updateInputField(index, { value: e.target.value })}
+                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                placeholder="Enter the input value"
+              />
+            </div>
+
+            {/* <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`required_${index}`}
+                  checked={field.required}
+                  onChange={(e) => updateInputField(index, { required: e.target.checked })}
+                  className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor={`required_${index}`} className="ml-1 text-xs text-gray-600">
+                  Required
+                </label>
+              </div>
+              
+            </div> */}
           </div>
         ))}
       </div>
 
-      <button
-        onClick={addField}
-        className="w-full px-4 py-2 bg-gray-100 text-gray-700 border border-dashed border-gray-400 rounded-md hover:bg-gray-200 flex items-center justify-center text-sm"
-      >
-        <PlusCircle size={14} className="mr-2"/>
-        Add Field
-      </button>
+      {error && (
+        <p className="text-sm text-red-600 flex items-center">
+          <AlertCircle size={14} className="mr-1" /> {error}
+        </p>
+      )}
 
-      {error && <p className="text-sm text-red-600 flex items-center"><AlertCircle size={14} className="mr-1"/> {error}</p>}
-      
-      <button onClick={handleSave} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center">
-        <Save size={16} className="mr-2"/>
+      <button 
+        onClick={handleSave} 
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
+      >
+        <Save size={16} className="mr-2" />
         Save Configuration
       </button>
     </div>
