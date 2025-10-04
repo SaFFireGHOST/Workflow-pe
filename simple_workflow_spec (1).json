@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "name": "YouTube Summarizer",
+  "description": "Workflow to extract transcript from YouTube and summarize using LLM.",
+  "nodes": [
+    {
+      "id": "input",
+      "type": "input",
+      "label": "YouTube URL Input",
+      "inputs": {
+        "string": "$interrupt.string"
+      },
+      "outputs": {
+        "value": "string"
+      }
+    },
+    {
+      "id": "youtube_tool",
+      "type": "youtube",
+      "label": "YouTube Transcript Extractor",
+      "inputs": {
+        "video_url": "$input.value",
+        "api_key": "$config.youtube_api_key"
+      },
+      "outputs": {
+        "transcript": "string"
+      }
+    },
+    {
+      "id": "llm",
+      "type": "llm",
+      "label": "LLM Summarizer",
+      "inputs": {
+        "api_key": "$config.llm_api_key",
+        "model": "$config.llm_model",
+        "system_prompt": "You are a helpful assistant that summarizes YouTube transcripts.",
+        "user_prompt": "Summarize the following transcript:",
+        "context": "$youtube_tool.transcript"
+      },
+      "outputs": {
+        "summary": "string"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "__start__",
+      "to": {
+        "nodes": ["input"]
+      }
+    },
+     {
+            "from": "input",
+            "to": {
+                "conditional_edges": [{
+                    "if": {
+                        "condition": "input.value != 'exit'"
+                    },
+                    "node": "youtube_tool"
+                }],
+                "nodes":["__end__"],
+                "default": "__end__"
+            }
+        },
+    {
+      "from": "youtube_tool",
+      "to": {
+        "nodes": ["llm"]
+      }
+    },
+    {
+      "from": "llm",
+      "to": {
+        "nodes": ["input"]
+      }
+    }
+    
+  ]
+}
