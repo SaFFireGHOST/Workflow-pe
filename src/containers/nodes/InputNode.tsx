@@ -4,18 +4,18 @@ import { BaseNode } from './BaseNode';
 import defaultNodes from '../../config/default_nodes.json';
 import * as Icons from 'lucide-react';
 
-export const EndNode: React.FC<NodeProps> = (props) => {
-  const template = defaultNodes['end'];
-  const IconComponent = (Icons as any)[template.icon] || Icons.Square;
+export const InputNode: React.FC<NodeProps> = (props) => {
+  const template = defaultNodes['input'];
+  const IconComponent = (Icons as any)[template.icon] || Icons.Keyboard;
 
   return (
     <BaseNode
       {...props}
       icon={<IconComponent size={16} />}
-      bgColor={template.bgColor || 'bg-red-500'}
-      borderColor={template.borderColor || 'border-red-600'}
+      bgColor={template.bgColor || 'bg-gradient-to-br from-purple-500 to-purple-600'}
+      borderColor={template.borderColor || 'border-purple-400'}
       textColor={template.textColor || 'text-white'}
-      nodeType="end"
+      nodeType="input"
     />
   );
 };

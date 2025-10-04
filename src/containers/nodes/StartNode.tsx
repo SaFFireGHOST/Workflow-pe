@@ -1,15 +1,20 @@
+import React from 'react';
 import { NodeProps } from '@xyflow/react';
-import { Play } from 'lucide-react';
 import { BaseNode } from './BaseNode';
+import defaultNodes from '../../config/default_nodes.json';
+import * as Icons from 'lucide-react';
 
-export const StartNode = (props: NodeProps) => {
+export const StartNode: React.FC<NodeProps> = (props) => {
+  const template = defaultNodes['start'];
+  const IconComponent = (Icons as any)[template.icon] || Icons.Play;
+
   return (
     <BaseNode
       {...props}
-      icon={<Play size={16} />}
-      bgColor="bg-green-500"
-      borderColor="border-green-600"
-      textColor="text-white"
+      icon={<IconComponent size={16} />}
+      bgColor={template.bgColor || 'bg-green-500'}
+      borderColor={template.borderColor || 'border-green-600'}
+      textColor={template.textColor || 'text-white'}
       nodeType="start"
     />
   );
