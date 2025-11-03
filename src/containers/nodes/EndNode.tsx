@@ -1,20 +1,15 @@
-import React from 'react';
 import { NodeProps } from '@xyflow/react';
+import { Square } from 'lucide-react';
 import { BaseNode } from './BaseNode';
-import defaultNodes from '../../config/default_nodes.json';
-import * as Icons from 'lucide-react';
 
-export const EndNode: React.FC<NodeProps> = (props) => {
-  const template = defaultNodes['end'];
-  const IconComponent = (Icons as any)[template.icon] || Icons.Square;
-
+export const EndNode = (props: NodeProps) => {
   return (
     <BaseNode
       {...props}
-      icon={<IconComponent size={16} />}
-      bgColor={template.bgColor || 'bg-red-500'}
-      borderColor={template.borderColor || 'border-red-600'}
-      textColor={template.textColor || 'text-white'}
+      icon={<Square size={16} />}
+      bgColor="bg-red-500"
+      borderColor="border-red-600"
+      textColor="text-white"
       nodeType="end"
     />
   );

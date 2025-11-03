@@ -23,8 +23,20 @@ import { EndNode } from '../nodes/EndNode';
 import { LLMNode } from '../nodes/LLMNode';
 import { ToolNode } from '../nodes/ToolNode';
 import { InterruptNode } from '../nodes/InterruptNode';
+import { BusinessNode } from '../nodes/business_nodes/BusinessNode';
 import { useWorkflowContext } from '../../context/workflowContext';
-import { WorkflowNode, WorkflowEdge } from '../../models';
+import { EdgeType, WorkflowNode, WorkflowEdge } from '../../models';
+import specificationData from '../nodes/business_nodes/specification.json';
+
+const specification = specificationData as { nodes: Array<{ name: string; color: string }> };
+
+// Create business node components dynamically
+const businessNodeComponents: Record<string, React.ComponentType<any>> = {};
+specification.nodes.forEach((_, index) => {
+  businessNodeComponents[`business_${index}`] = (props: any) => (
+    <BusinessNode {...props} specIndex={index} />
+  );
+});
 
 const nodeTypes = {
   start: StartNode,
@@ -32,6 +44,7 @@ const nodeTypes = {
   llm: LLMNode,
   tool: ToolNode,
   interrupt: InterruptNode,
+  ...businessNodeComponents,
 };
 
 // No custom edge types needed - ReactFlow will use default rendering
@@ -79,13 +92,16 @@ export const WorkflowCanvas: React.FC = () => {
 
   const onConnect: OnConnect = useCallback((connection: Connection) => {
     if (connection.source && connection.target) {
-      addStoreEdge(
-        connection.target,
-        connection.source,
-        'default',
-        connection.targetHandle ?? undefined,
-        connection.sourceHandle ?? undefined,
-      );
+      const newEdge = {
+        id: `e${connection.source}-${connection.target}`,
+        source: connection.source,
+        target: connection.target,
+        type: 'default',
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+        },
+      };
+      addStoreEdge(newEdge.source, newEdge.target, newEdge.type as EdgeType);
     }
   }, [addStoreEdge]);
 
@@ -146,45 +162,26 @@ export const WorkflowCanvas: React.FC = () => {
 
   // Don't show "No Workflow" message - let users drag nodes to create workflow automatically
 
-  const plainEdge = (edges: WorkflowEdge[]): Edge[] => {
-    return (edges || []).map(edge => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      type: edge.type,
-      data: edge.data,
-      animated: edge.animated,
-      style: {
-        stroke: edge.type === 'conditional' ? '#f59e0b' : '#374151',
-        strokeWidth: 2,
-      },
-      sourceHandle: edge.sourceHandle ?? undefined,
-      targetHandle: edge.targetHandle ?? undefined,
-    }));
-  };
-
-  const directedEdge = (edges: WorkflowEdge[]): Edge[] => {
-    return edges.map(edge => ({
-      ...edge,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 20,
-        height: 20,
-        color: edge.type === 'conditional' ? '#f59e0b' : '#374151'
-      },
-      style: {
-        stroke: edge.type === 'conditional' ? '#f59e0b' : '#374151',
-        strokeWidth: 2
-      }
-    }));
-  };
+  // Transform edges to have arrows
+  const edgesWithArrows = (currentWorkflow?.edges || []).map(edge => ({
+    ...edge,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: edge.type === 'conditional' ? '#f59e0b' : '#374151'
+    },
+    style: {
+      stroke: edge.type === 'conditional' ? '#f59e0b' : '#374151',
+      strokeWidth: 2
+    }
+  }));
 
   return (
     <div className="flex-1" style={{ width: '100%', height: '100%', position: 'relative' }} ref={reactFlowWrapper}>
       <ReactFlow
         nodes={currentWorkflow?.nodes || []}
-        // edges={plainEdge(currentWorkflow?.edges || [])}
-        edges={directedEdge(currentWorkflow?.edges || [])}
+        edges={edgesWithArrows || []}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

@@ -1,4 +1,4 @@
-export type NodeType = 'start' | 'end' | 'llm' | 'tool' | 'interrupt';
+export type NodeType = 'start' | 'end' | 'llm' | 'tool' | 'interrupt' | string;
 
 export interface NodeData extends Record<string, unknown> {
   label: string;

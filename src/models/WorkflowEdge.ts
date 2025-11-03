@@ -100,6 +100,7 @@ export interface ParallelEdgeData extends EdgeData {
 export interface LoopingEdgeData extends EdgeData {
   config?: LoopingEdgeConfig;
 }
+
 export class WorkflowEdge {
   id: string;
   source: string;
@@ -108,8 +109,6 @@ export class WorkflowEdge {
   data: EdgeData;
   animated?: boolean;
   style?: Record<string, any>;
-  sourceHandle?: string;
-  targetHandle?: string;
 
   constructor(
     id: string,
@@ -118,9 +117,7 @@ export class WorkflowEdge {
     type: EdgeType,
     data: EdgeData,
     animated?: boolean,
-    style?: Record<string, any>,
-    sourceHandle?: string,
-    targetHandle?: string
+    style?: Record<string, any>
   ) {
     this.id = id;
     this.source = source;
@@ -129,10 +126,9 @@ export class WorkflowEdge {
     this.data = data;
     this.animated = animated;
     this.style = style;
-    this.sourceHandle = sourceHandle;
-    this.targetHandle = targetHandle;
   }
 
+  // Method to update edge data
   updateData(newData: Partial<EdgeData>): WorkflowEdge {
     return new WorkflowEdge(
       this.id,
@@ -141,12 +137,11 @@ export class WorkflowEdge {
       this.type,
       { ...this.data, ...newData },
       this.animated,
-      this.style,
-      this.sourceHandle,
-      this.targetHandle
+      this.style
     );
   }
 
+  // Method to update edge style
   updateStyle(newStyle: Record<string, any>): WorkflowEdge {
     return new WorkflowEdge(
       this.id,
@@ -155,12 +150,11 @@ export class WorkflowEdge {
       this.type,
       this.data,
       this.animated,
-      { ...this.style, ...newStyle },
-      this.sourceHandle,
-      this.targetHandle
+      { ...this.style, ...newStyle }
     );
   }
 
+  // Method to set animation
   setAnimated(animated: boolean): WorkflowEdge {
     return new WorkflowEdge(
       this.id,
@@ -169,24 +163,26 @@ export class WorkflowEdge {
       this.type,
       this.data,
       animated,
-      this.style,
-      this.sourceHandle,
-      this.targetHandle
+      this.style
     );
   }
 
+  // Method to check if edge is conditional
   isConditional(): boolean {
     return this.type === 'conditional';
   }
 
+  // Method to check if edge is parallel
   isParallel(): boolean {
     return this.type === 'parallel';
   }
 
+  // Method to check if edge is looping
   isLooping(): boolean {
     return this.type === 'looping';
   }
 
+  // Method to create a copy of the edge
   clone(): WorkflowEdge {
     return new WorkflowEdge(
       this.id,
@@ -195,10 +191,7 @@ export class WorkflowEdge {
       this.type,
       { ...this.data },
       this.animated,
-      this.style ? { ...this.style } : undefined,
-      this.sourceHandle,
-      this.targetHandle
+      this.style ? { ...this.style } : undefined
     );
   }
 }
-

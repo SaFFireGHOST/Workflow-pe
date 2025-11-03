@@ -1,6 +1,9 @@
 import React from 'react';
-import { Play, Square, Brain, Wrench, Pause, GitBranch } from 'lucide-react';
+import { Play, Square, Brain, Wrench, Pause, GitBranch, FileText } from 'lucide-react';
 import { useWorkflowContext } from '../../context/workflowContext';
+import specificationData from '../nodes/business_nodes/specification.json';
+
+const specification = specificationData as { nodes: Array<{ name: string; color: string }> };
 
 const nodeTypes = [
   { type: 'start' as const, label: 'Start', icon: Play, color: 'bg-green-500 hover:bg-green-600' },
@@ -10,10 +13,18 @@ const nodeTypes = [
   { type: 'interrupt' as const, label: 'Interrupt', icon: Pause, color: 'bg-yellow-500 hover:bg-yellow-600' },
 ];
 
+// Generate business node types from specification
+const businessNodeTypes = specification.nodes.map((node, index) => ({
+  type: `business_${index}` as const,
+  label: node.name,
+  icon: FileText,
+  color: node.color,
+  specIndex: index,
+}));
+
 export const NodePanel: React.FC = () => {
   const { 
     canAddNode, 
-    selectedNode, 
     conditionalEdgeMode, 
     conditionalSourceNode,
     startConditionalEdgeMode,
@@ -26,7 +37,7 @@ export const NodePanel: React.FC = () => {
   };
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 p-4">
+    <div className="w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto">
       <h3 className="text-lg font-semibold mb-4 text-gray-900">Node Types</h3>
       <div className="space-y-2">
         {nodeTypes.map(({ type, label, icon: Icon, color }) => (
@@ -56,6 +67,34 @@ export const NodePanel: React.FC = () => {
           </div>
         ))}
       </div>
+      
+      {/* Business Nodes Section */}
+      {businessNodeTypes.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-3 text-gray-900">Business Nodes</h3>
+          <div className="space-y-2">
+            {businessNodeTypes.map(({ type, label, icon: Icon, color }) => (
+              <div key={type} className="relative">
+                <div
+                  className={`
+                    text-white p-3 rounded-lg transition-colors duration-200
+                    flex items-center space-x-3
+                    cursor-grab active:cursor-grabbing hover:shadow-md transform hover:scale-105
+                  `}
+                  style={{ 
+                    backgroundColor: color,
+                  }}
+                  draggable={true}
+                  onDragStart={(event) => handleDragStart(event, type)}
+                >
+                  <Icon size={20} />
+                  <span className="font-medium">{label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Conditional Edge Section */}
       <div className="mt-6">

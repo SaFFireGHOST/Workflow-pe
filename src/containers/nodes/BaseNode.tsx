@@ -13,90 +13,107 @@ interface BaseNodeProps extends NodeProps {
   nodeType: string;
 }
 
-export const BaseNode = memo<BaseNodeProps>(({
-  data,
-  id,
-  selected,
-  icon,
-  bgColor,
-  borderColor,
+export const BaseNode = memo<BaseNodeProps>(({ 
+  data, 
+  id, 
+  selected, 
+  icon, 
+  bgColor, 
+  borderColor, 
   textColor,
   nodeType
 }) => {
+  // Cast data to our NodeData type
   const nodeData = data as NodeData & { type?: string };
+  
   const [isEditing, setIsEditing] = useState(false);
   const [labelValue, setLabelValue] = useState(nodeData.label || '');
   const { updateNode, deleteNode, setSelectedNode } = useWorkflowContext();
 
   const handleLabelSubmit = () => {
-    if (labelValue.trim()) updateNode(id, { label: labelValue.trim() });
+    if (labelValue.trim()) {
+      updateNode(id, { label: labelValue.trim() });
+    }
     setIsEditing(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleLabelSubmit();
-    else if (e.key === 'Escape') {
+    if (e.key === 'Enter') {
+      handleLabelSubmit();
+    } else if (e.key === 'Escape') {
       setLabelValue(nodeData.label || '');
       setIsEditing(false);
     }
   };
 
   const handleNodeClick = () => {
-    const nodeForSelection = new WorkflowNode(id, nodeType as any, { x: 0, y: 0 }, nodeData);
-    const {
-      conditionalEdgeMode,
-      conditionalSourceNode,
-      conditionalTrueNode,
-      conditionalFalseNode,
-      selectConditionalNode
-    } = useWorkflowContext.getState();
-
+    // Create a WorkflowNode instance for selection using the passed nodeType
+    const nodeForSelection = new WorkflowNode(
+      id,
+      nodeType as any,
+      { x: 0, y: 0 },
+      nodeData
+    );
+    
+    // Check if we're in conditional edge mode
+    const { conditionalEdgeMode, conditionalSourceNode, conditionalTrueNode, conditionalFalseNode, selectConditionalNode } = useWorkflowContext.getState();
+    
     if (conditionalEdgeMode) {
-      if (!conditionalSourceNode) selectConditionalNode(nodeForSelection, 'source');
-      else if (!conditionalTrueNode && conditionalSourceNode.id !== id) selectConditionalNode(nodeForSelection, 'true');
-      else if (!conditionalFalseNode && conditionalSourceNode.id !== id &&
-               (!conditionalTrueNode || conditionalTrueNode.id !== id)) selectConditionalNode(nodeForSelection, 'false');
+      // Determine which slot to fill
+      if (!conditionalSourceNode) {
+        selectConditionalNode(nodeForSelection, 'source');
+        return;
+      } else if (!conditionalTrueNode && conditionalSourceNode.id !== id) {
+        selectConditionalNode(nodeForSelection, 'true');
+        return;
+      } else if (!conditionalFalseNode && conditionalSourceNode.id !== id && (!conditionalTrueNode || conditionalTrueNode.id !== id)) {
+        selectConditionalNode(nodeForSelection, 'false');
+        return;
+      }
     }
-
+    
     setSelectedNode(nodeForSelection);
   };
 
+  // Fixed node height for all node types
   const nodeHeight = 120;
 
   return (
-    <div
+    <div 
       className={`
         relative group rounded-lg border-2 transition-all duration-200
         ${bgColor} ${borderColor} ${textColor}
         ${selected ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
-        hover:shadow-lg w-[200px] shadow-md
+        hover:shadow-lg
+        w-[200px] shadow-md
       `}
       style={{ height: `${nodeHeight}px`, minHeight: `${nodeHeight}px`, minWidth: '200px' }}
     >
+      {/* I/O Ports */}
       <NodeIOPorts nodeId={id} data={nodeData} />
 
-      {/* Handles with unique IDs */}
-      <Handle type="source" position={Position.Top} id="top" />
-      <Handle type="target" position={Position.Top} id="top" />
-      <Handle type="source" position={Position.Bottom} id="bottom" />
-      <Handle type="target" position={Position.Bottom} id="bottom" />
+      {/* Basic, functional handles */}
+      <Handle type="source" position={Position.Top} />
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} />
+      <Handle type="target" position={Position.Bottom} />
+      <Handle type="source" position={Position.Left} />
+      <Handle type="target" position={Position.Left} />
+      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={Position.Right} />
 
-      {/* Optional: left/right handles if needed */}
-      <Handle type="source" position={Position.Left} id="left" />
-      <Handle type="target" position={Position.Left} id="left" />
-      <Handle type="source" position={Position.Right} id="right" />
-      <Handle type="target" position={Position.Right} id="right" />
-
-      {/* Node content */}
-      <div
+      {/* Node Content */}
+      <div 
         className="p-4 flex flex-col items-center space-y-2 cursor-pointer h-full"
         onClick={handleNodeClick}
       >
         <div className="flex items-center space-x-2">
           {icon}
-          <span className="text-xs font-medium tracking-wide opacity-80">{id}</span>
+          <span className="text-xs font-medium tracking-wide opacity-80">
+            {id}
+          </span>
         </div>
-
+        
         {isEditing ? (
           <input
             type="text"
@@ -118,13 +135,13 @@ export const BaseNode = memo<BaseNodeProps>(({
             {nodeData.label || 'Untitled'}
           </div>
         )}
-
+        
         {nodeData.description && (
           <p className="text-xs opacity-75 text-center">{String(nodeData.description)}</p>
         )}
       </div>
 
-      {/* Action buttons */}
+      {/* Action Buttons */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
         <button
           onClick={(e) => {

@@ -6,7 +6,6 @@ import {
   DataType
 } from '../models/IOVariable';
 import { useWorkflowContext } from '../context/workflowContext';
-import defaultNodes from '../config/default_nodes.json';
 
 interface IOVariableManagerProps {
   nodeId: string;
@@ -70,52 +69,147 @@ export const IOVariableManager: React.FC<IOVariableManagerProps> = ({
       console.log('Loaded existing I/O config:', { inputs: nodeInputs, outputs: nodeOutputs });
     } else {
       // Initialize with predefined variables based on node type
-      const defaultInputs = getDefaultInputsForNodeType(nodeType, nodeId);
-      const defaultOutputs = getDefaultOutputsForNodeType(nodeType, nodeId);
+      const defaultInputs = getDefaultInputsForNodeType(nodeType);
+      const defaultOutputs = getDefaultOutputsForNodeType(nodeType);
       setInputs(defaultInputs);
       setOutputs(defaultOutputs);
       console.log('Using default I/O config:', { inputs: defaultInputs, outputs: defaultOutputs });
     }
   }, [nodeId, nodeType, currentWorkflow]);
 
-  const getDefaultInputsForNodeType = (nodeType: string, nodeId: string): { [key: string]: InputPort } => {
-    // Cast nodeType to keyof typeof defaultNodes for TS
-    const nodeTemplate = defaultNodes[nodeType as keyof typeof defaultNodes];
-    if (!nodeTemplate || !nodeTemplate.inputs) return {};
+  const getDefaultInputsForNodeType = (nodeType: string): { [key: string]: InputPort } => {
+    const defaults: { [key: string]: { [key: string]: InputPort } } = {
+      llm: {
+        model: {
+          id: `${nodeId}_input_model`,
+          name: 'model',
+          dataType: 'string',
+          required: true,
+          description: 'LLM model to use',
+          value: 'gpt-3.5-turbo'
+        },
+        api_key: {
+          id: `${nodeId}_input_api_key`,
+          name: 'api_key',
+          dataType: 'string',
+          required: true,
+          description: 'API key for the LLM service',
+          isTemplate: true
+        },
+        max_tokens: {
+          id: `${nodeId}_input_max_tokens`,
+          name: 'max_tokens',
+          dataType: 'number',
+          required: false,
+          description: 'Maximum tokens to generate',
+          value: 150
+        },
+        temperature: {
+          id: `${nodeId}_input_temperature`,
+          name: 'temperature',
+          dataType: 'number',
+          required: false,
+          description: 'Temperature for randomness',
+          value: 0.7
+        },
+        system_prompt: {
+          id: `${nodeId}_input_system_prompt`,
+          name: 'system_prompt',
+          dataType: 'string',
+          required: false,
+          description: 'System prompt for the LLM'
+        },
+        user_prompt: {
+          id: `${nodeId}_input_user_prompt`,
+          name: 'user_prompt',
+          dataType: 'string',
+          required: true,
+          description: 'User prompt/query for the LLM'
+        },
+        context: {
+          id: `${nodeId}_input_context`,
+          name: 'context',
+          dataType: 'foreign',
+          required: false,
+          description: 'Additional context for the LLM'
+        }
+      },
+      tool: {
+        tool_name: {
+          id: `${nodeId}_input_tool_name`,
+          name: 'tool_name',
+          dataType: 'string',
+          required: true,
+          description: 'Name of the tool to execute'
+        },
+        parameters: {
+          id: `${nodeId}_input_parameters`,
+          name: 'parameters',
+          dataType: 'object',
+          required: false,
+          description: 'Parameters for the tool'
+        }
+      },
+      interrupt: {
+        message: {
+          id: `${nodeId}_input_message`,
+          name: 'message',
+          dataType: 'string',
+          required: true,
+          description: 'Message to display to the user'
+        },
+        timeout: {
+          id: `${nodeId}_input_timeout`,
+          name: 'timeout',
+          dataType: 'number',
+          required: false,
+          description: 'Timeout in seconds',
+          value: 300
+        }
+      }
+    };
 
-    const inputs: { [key: string]: InputPort } = {};
-
-    Object.entries(nodeTemplate.inputs).forEach(([key, value]: [string, any]) => {
-      inputs[key] = {
-        id: `${nodeId}_input_${key}`,
-        name: key,
-        dataType: value.dataType,
-        required: value.required || false,
-        description: value.description || '',
-        value: value.default !== undefined ? value.default : undefined,
-        isTemplate: value.isTemplate || false
-      };
-    });
-
-    return inputs;
+    return defaults[nodeType] || {};
   };
 
-  const getDefaultOutputsForNodeType = (nodeType: string, nodeId: string): { [key: string]: OutputPort } => {
-    const nodeTemplate = defaultNodes[nodeType as keyof typeof defaultNodes];
-    if (!nodeTemplate || !nodeTemplate.outputs) return {};
+  const getDefaultOutputsForNodeType = (nodeType: string): { [key: string]: OutputPort } => {
+    const defaults: { [key: string]: { [key: string]: OutputPort } } = {
+      llm: {
+        response: {
+          id: `${nodeId}_output_response`,
+          name: 'response',
+          dataType: 'string',
+          description: 'Generated response from the LLM'
+        }
+      },
+      tool: {
+        result: {
+          id: `${nodeId}_output_result`,
+          name: 'result',
+          dataType: 'any',
+          description: 'Result from tool execution'
+        }
+      },
+      interrupt: {
+        user_input: {
+          id: `${nodeId}_output_user_input`,
+          name: 'user_input',
+          dataType: 'string',
+          description: 'User input received'
+        }
+      },
+      start: {
+        trigger: {
+          id: `${nodeId}_output_trigger`,
+          name: 'trigger',
+          dataType: 'boolean',
+          description: 'Workflow start trigger'
+        }
+      },
+      end: {}
+    };
 
-    const outputs: { [key: string]: OutputPort } = {};
-
-    Object.entries(nodeTemplate.outputs).forEach(([key, value]: [string, any]) => {
-      outputs[key] = {
-        id: `${nodeId}_output_${key}`,
-        name: key,
-        dataType: value.dataType,
-        description: value.description || ''
-      };
-    });
-
-    return outputs;
+    return defaults[nodeType] || {};
   };
 
   const getDataTypeColor = (dataType: DataType): string => {

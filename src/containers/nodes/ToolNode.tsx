@@ -1,20 +1,16 @@
 import React from 'react';
-import { NodeProps } from '@xyflow/react';
+import { Wrench } from 'lucide-react';
 import { BaseNode } from './BaseNode';
-import defaultNodes from '../../config/default_nodes.json';
-import * as Icons from 'lucide-react';
+import { NodeProps } from '@xyflow/react';
 
 export const ToolNode: React.FC<NodeProps> = (props) => {
-  const template = defaultNodes['tool'];
-  const IconComponent = (Icons as any)[template.icon] || Icons.Wrench;
-
   return (
     <BaseNode
       {...props}
-      icon={<IconComponent size={16} />}
-      bgColor={template.bgColor || 'bg-green-400'}
-      borderColor={template.borderColor || 'border-green-400'}
-      textColor={template.textColor || 'text-white'}
+      icon={<Wrench size={16} />}
+      bgColor="bg-gradient-to-br from-green-500 to-green-600"
+      borderColor="border-green-400"
+      textColor="text-white"
       nodeType="tool"
     />
   );

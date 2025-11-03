@@ -1,0 +1,61 @@
+{
+    "nodes": [
+        {
+            "name": "Demo",
+            "color": "blue",
+            "form_inputs": [
+                {
+                    "name": "Name",
+                    "type": "text-input"
+                },
+                {
+                    "name": "Password",
+                    "type": "text-input",
+                    "dtype": "password"
+                },
+                {
+                    "name": "PhotoID",
+                    "type": "file",
+                    "storage_url": "http://localhost:8081/api/files"
+                },
+                {
+                    "name": "Agree To Terms",
+                    "type": "checkbox",
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "name": "Choosen Course",
+                    "type": "dropdown",
+                    "options": [
+                        "Software Engineering",
+                        "Machine Learning"
+                    ]
+                }
+            ],
+            "submit_endpoint": "http://localhost:8081/api/submit"
+        },
+{
+            "name": "NewNode",
+            "color": "yellow",
+            "form_inputs": [
+                {
+                    "name": "Name",
+                    "type": "text-input"
+                },
+                {
+                    "name": "Roll Number",
+                    "type": "text-input"
+                },
+                {
+                    "name": "Assignment",
+                    "type": "file",
+                    "storage_url": "http://localhost:8080/api/files"
+                }
+            ],
+            "submit_endpoint": "http://localhost:8081/api/submit"
+        }
+    ]
+}

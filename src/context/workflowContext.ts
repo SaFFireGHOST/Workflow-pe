@@ -30,14 +30,7 @@ interface WorkflowContext {
   canAddNode: (type: NodeType) => boolean;
   
   // Edge operations
-  addEdge: (
-    source: string, 
-    target: string, 
-    type: EdgeType, 
-    sourceHandle?: string, 
-    targetHandle?: string
-  ) => void;
-
+  addEdge: (source: string, target: string, type: EdgeType) => void;
   updateEdge: (id: string, data: Partial<WorkflowEdge['data']>) => void;
   deleteEdge: (id: string) => void;
   setSelectedEdge: (edge: WorkflowEdge | null) => void;
@@ -275,13 +268,7 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
     set({ selectedNode: node, selectedEdge: null });
   },
 
-  addEdge: (
-    source: string,
-    target: string,
-    type: EdgeType,
-    sourceHandle?: string,
-    targetHandle?: string
-  ) => {
+  addEdge: (source: string, target: string, type: EdgeType) => {
     const { currentWorkflow } = get();
     if (!currentWorkflow) return;
 
@@ -293,13 +280,17 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
       {
         label: type === 'conditional' ? 'If true' : type === 'error' ? 'On error' : '',
       },
-      type === 'looping', // animated
+      type === 'looping',
       {
         stroke: type === 'conditional' ? '#F59E0B' : type === 'parallel' ? '#8B5CF6' : '#6B7280',
         strokeWidth: 2,
-      },
-      sourceHandle,  // new
-      targetHandle   // new
+        markerEnd: {
+          type: 'arrowclosed',
+          width: 20,
+          height: 20,
+          color: type === 'conditional' ? '#F59E0B' : type === 'parallel' ? '#8B5CF6' : '#6B7280'
+        }
+      }
     );
 
     const updatedWorkflow = currentWorkflow.addEdge(edge);
@@ -310,23 +301,18 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
     }));
   },
 
-  updateEdge: (
-    id: string,
-    updates: Partial<WorkflowEdge['data']> & { 
-      type?: EdgeType, 
-      sourceHandle?: string, 
-      targetHandle?: string 
-    }
-  ) => {
+  updateEdge: (id: string, updates: Partial<WorkflowEdge['data']> & { type?: EdgeType }) => {
     const { currentWorkflow } = get();
     if (!currentWorkflow) return;
 
     const existingEdge = currentWorkflow.findEdge(id);
     if (!existingEdge) return;
 
+    // Create updated edge data
     const updatedData = { ...existingEdge.data, ...updates };
     const edgeType = updates.type || existingEdge.type;
-
+    
+    // Create new WorkflowEdge instance with updated data
     const updatedEdge = new WorkflowEdge(
       existingEdge.id,
       existingEdge.source,
@@ -338,11 +324,9 @@ export const useWorkflowContext = create<WorkflowContext>((set, get) => ({
         ...existingEdge.style,
         stroke: '#F59E0B',
         strokeWidth: 2
-      } : existingEdge.style,
-      updates.sourceHandle ?? existingEdge.sourceHandle,
-      updates.targetHandle ?? existingEdge.targetHandle
+      } : existingEdge.style
     );
-
+    
     const updatedWorkflow = currentWorkflow.updateEdge(id, updatedEdge);
 
     set((state) => ({
