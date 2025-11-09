@@ -1,61 +1,108 @@
 {
-    "nodes": [
-        {
-            "name": "Demo",
-            "color": "blue",
-            "form_inputs": [
-                {
-                    "name": "Name",
-                    "type": "text-input"
-                },
-                {
-                    "name": "Password",
-                    "type": "text-input",
-                    "dtype": "password"
-                },
-                {
-                    "name": "PhotoID",
-                    "type": "file",
-                    "storage_url": "http://localhost:8081/api/files"
-                },
-                {
-                    "name": "Agree To Terms",
-                    "type": "checkbox",
-                    "options": [
-                        "Yes",
-                        "No"
-                    ]
-                },
-                {
-                    "name": "Choosen Course",
-                    "type": "dropdown",
-                    "options": [
-                        "Software Engineering",
-                        "Machine Learning"
-                    ]
-                }
-            ],
-            "submit_endpoint": "http://localhost:8081/api/submit"
-        },
-{
-            "name": "NewNode",
-            "color": "yellow",
-            "form_inputs": [
-                {
-                    "name": "Name",
-                    "type": "text-input"
-                },
-                {
-                    "name": "Roll Number",
-                    "type": "text-input"
-                },
-                {
-                    "name": "Assignment",
-                    "type": "file",
-                    "storage_url": "http://localhost:8080/api/files"
-                }
-            ],
-            "submit_endpoint": "http://localhost:8081/api/submit"
-        }
-    ]
+  "version": "1.0",
+  "user_id": "1234",
+  "name": "payment workflow-2",
+  "description": "payment workflow 2",
+  "invoker": "program_manager",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "business_0",
+      "type": "business",
+      "label": "Initiate Payment",
+      "inputs": { "form": "$interrupt.dict" },
+      "outputs": { "form": "dict" },
+      "roles": ["program_manager"],
+      "color": "#3b82f6",
+      "submit_endpoint": "http://localhost:8081/api/submit",
+      "storage_url": "http://localhost:8081/api/files",
+      "access": {
+        "fields": [
+          { "name": "amount", "access": "write", "type": "string" },
+          { "name": "invoice_id", "access": "write", "type": "string" },
+          { "name": "vendor_name", "access": "write", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "n2",
+      "name": "business_1",
+      "type": "business",
+      "label": "Manager Review",
+      "inputs": { "form": "$interrupt.dict" },
+      "outputs": { "form": "dict" },
+      "roles": ["manager"],
+      "color": "#10b981",
+      "submit_endpoint": "http://localhost:8081/api/submit",
+      "storage_url": "http://localhost:8081/api/files",
+      "access": {
+        "fields": [
+          { "name": "Decision", "access": "write", "type": "dropdown", "options": ["Approve", "Reject"] },
+          { "name": "approval_comment", "access": "write", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "n3",
+      "name": "business_2",
+      "type": "business",
+      "label": "Director Approval",
+      "inputs": { "form": "$interrupt.dict" },
+      "outputs": { "form": "dict" },
+      "roles": ["director"],
+      "color": "#8b5cf6",
+      "submit_endpoint": "http://localhost:8081/api/submit",
+      "storage_url": "http://localhost:8081/api/files",
+      "access": {
+        "fields": [
+          { "name": "Decision", "access": "write", "type": "dropdown", "options": ["Approve", "Reject"] },
+          { "name": "approval_comment", "access": "write", "type": "string" }
+        ]
+      }
+    },
+    {
+      "id": "n4",
+      "name": "business_3",
+      "type": "business",
+      "label": "Finance Processing",
+      "inputs": { "form": "$interrupt.dict" },
+      "outputs": { "form": "dict" },
+      "roles": ["finance"],
+      "color": "#f59e0b",
+      "submit_endpoint": "http://localhost:8081/api/submit",
+      "storage_url": "http://localhost:8081/api/files",
+      "access": {
+        "fields": [
+          { "name": "payment_status", "access": "write", "type": "dropdown", "options": ["Paid", "Unpaid"] }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    { "from": "__start__", "to": { "nodes": ["n1"] } },
+    { "from": "n1", "to": { "nodes": ["n2"] } },
+    {
+      "from": "n2",
+      "to": {
+        "check_state": { "state": "n2_form", "property": "Decision" },
+        "conditional_nodes": [
+          { "if_value": "Approve", "node": "n3" },
+          { "if_value": "Reject", "node": "n1" }
+        ],
+        "default": "n1"
+      }
+    },
+    {
+      "from": "n3",
+      "to": {
+        "check_state": { "state": "n3_form", "property": "Decision" },
+        "conditional_nodes": [
+          { "if_value": "Approve", "node": "n4" },
+          { "if_value": "Reject", "node": "n2" }
+        ],
+        "default": "n2"
+      }
+    },
+    { "from": "n4", "to": { "nodes": ["__end__"] } }
+  ]
 }

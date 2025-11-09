@@ -1,0 +1,98 @@
+ {
+                "version": "1.0",
+                "user_id": "1234",
+                "name": "payment workflow-2",
+                "description": "payment workflow 2",
+                "invoker": "program_manager",
+                "nodes": [
+                    {
+                    "id": "n1",
+                    "type": "business",
+                    "label": "Initiate Payment",
+                    "inputs": { "form": "$interrupt.dict" },
+                    "outputs": { "form": "dict" },
+                    "roles": ["program_manager"],
+                    "access": {
+                        "fields": [
+                        { "name": "amount", "access": "write" ,"type": "string" },
+                        { "name": "invoice_id", "access": "write","type": "string" },
+                        { "name": "vendor_name", "access": "write", "type": "string" }
+                        ]
+                    }
+                    },
+                    {
+                    "id": "n2",
+                    "type": "business",
+                    "label": "Manager Review",
+                    "inputs": { "form": "$interrupt.dict" },
+                    "outputs": { "form": "dict" },
+                    "roles": ["manager"],
+                    "access": {
+                        "fields": [
+                        { "name": "Decision", "access": "write", "type": "dropdown", "options": ["Approve", "Reject"] },
+                        { "name": "approval_comment", "access": "write", "type": "string" }
+                        ]
+                    }
+                    },
+                    {
+                    "id": "n3",
+                    "type": "business",
+                    "label": "Director Approval",
+                    "inputs": { "form": "$interrupt.dict" },
+                    "outputs": { "form": "dict" },
+                    "roles": ["director"],
+                    "access": {
+                        "fields": [
+                        { "name": "Decision", "access": "write", "type": "dropdown", "options": ["Approve", "Reject"] },
+                        { "name": "approval_comment", "access": "write", "type": "string" }
+                        ]
+                    }
+                    },
+                    {
+                    "id": "n4",
+                    "type": "business",
+                    "label": "Finance Processing",
+                    "inputs": { "form": "$interrupt.dict" },
+                    "outputs": { "form": "dict" },
+                    "roles": ["finance"],
+                    "access": {
+                        "fields": [
+                        { "name": "payment_status", "access": "write", "type": "dropdown", "options": ["Paid", "Unpaid"] }
+                        ]
+                    }
+                    }
+                ],
+                "edges": [
+                        {"from": "__start__", "to": {"nodes": ["n1"]}},
+                        {"from": "n1", "to": {"nodes": ["n2"]}},
+                        {
+                            "from": "n2",
+                            "to": {
+                                "check_state": {
+                                    "state": "n2_form",    
+                                    "property": "Decision" 
+                                },
+                                "conditional_nodes": [
+                                    {"if_value": "Approve", "node": "n3"},
+                                    {"if_value": "Reject", "node": "n1"}
+                                ],
+                                "default": "n1"
+                            }
+                        },
+                        {
+                            "from": "n3",
+                            "to": {
+                                "check_state": {
+                                    "state": "n3_form",    
+                                    "property": "Decision" 
+                                },
+                                "conditional_nodes": [
+                                    {"if_value": "Approve", "node": "n4"},
+                                    {"if_value": "Reject", "node": "n2"}
+                                ],
+                                "default": "n2"
+                            }
+                        },
+                        {"from": "n4", "to": {"nodes": ["__end__"]}}
+                ]
+                }
